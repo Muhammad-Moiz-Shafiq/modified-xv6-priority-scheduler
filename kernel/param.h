@@ -13,3 +13,8 @@
 #define MAXPATH      128   // maximum file path name
 #define USERSTACK    1     // user stack pages
 
+// Priority scheduler parameters
+#define PRIO_MIN       0
+#define PRIO_MAX       3    // 0 (lowest) .. 3 (highest)
+#define PRIO_DEFAULT   1
+
