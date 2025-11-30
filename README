@@ -1,3 +1,4 @@
+--- Original README as per source ---
 xv6 is a re-implementation of Dennis Ritchie's and Ken Thompson's Unix
 Version 6 (v6).  xv6 loosely follows the structure and style of v6,
 but is implemented for a modern RISC-V multiprocessor using ANSI C.
@@ -46,3 +47,55 @@ You will need a RISC-V "newlib" tool chain from
 https://github.com/riscv/riscv-gnu-toolchain, and qemu compiled for
 riscv64-softmmu.  Once they are installed, and in your shell
 search path, you can run "make qemu".
+--- End of Original README ---
+
+--- Modification ---
+## Priority-Based Scheduler for xv6-riscv
+
+This repo modifies xv6-riscv to add a simple static priority scheduler with two syscalls:
+- setpriority(int prio): set the calling process's priority to PRIO_MIN..PRIO_MAX
+- getpriority(void): get the calling process's current priority
+
+Priorities are integers in [PRIO_MIN, PRIO_MAX] defined in `kernel/param.h`. Higher value means higher priority. Newly created processes start with `PRIO_DEFAULT` and children inherit the parent’s current priority at fork.
+
+### Build and Run (If you are a windows user, you can use WSL + QEMU)
+
+Prereqs installed 
+- RISC-V toolchain
+- QEMU >= 7.2
+
+Steps:
+1) Clean and build 
+   make clean && make -j
+
+2) Run xv6 in QEMU
+   make qemu
+
+3) In the xv6 shell, run the tests:
+   prio_basic
+   prio_stress
+   prio_edge
+
+What to Expect
+
+- prio_basic: Three children (LOW/MID/HIGH) do short CPU work. With strict priority, HIGH should finish first, then MID, then LOW.
+- prio_stress: Spawns 50 short-running children with varying priorities to stress process creation/scheduling.
+- prio_edge: Validates error handling for out-of-range priorities and shows get/set behavior.
+
+### Implementation Touchpoints
+
+* Added priority field to `struct proc` and constants in `kernel/param.h`.
+* Modified `scheduler()` in `kernel/proc.c` to always select the highest-priority RUNNABLE process.
+* New syscalls:
+  - Numbers in `kernel/syscall.h`
+  - Wiring in `kernel/syscall.c`
+  - Implementations in `kernel/sysproc.c`
+  - Stubs in `user/usys.pl`, prototypes in `user/user.h`
+* Tests in `user/prio_basic.c`, `user/prio_stress.c`, `user/prio_edge.c`
+* Wired tests into build via `Makefile` UPROGS.
+
+Notes
+-----
+This is a minimal teaching implementation. It does not implement aging or fairness; lower-priority jobs may starve if higher-priority jobs remain RUNNABLE.
+
+
